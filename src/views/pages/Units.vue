@@ -134,9 +134,10 @@ export default {
         { text: 'Created At', value: 'created_at' },
         { text: 'Action', value: 'action', sortable: false },
       ],
-      searchColumn: 'unit_number',
+      searchColumn: 'property_id',
       searchFilters: [
         { text: 'Unit Number', value: 'unit_number' },
+        { text: 'Property Id', value: 'property_id' },
         { text: 'Size', value: 'size' },
       ],
       units: [],
@@ -277,7 +278,7 @@ export default {
       if (status === 2) return 'Leased'
       if (status === 3) return 'Reserved'
       return ''
-    }
+    },
   },
 }
 </script>
