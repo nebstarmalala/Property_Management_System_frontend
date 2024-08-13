@@ -5,10 +5,11 @@
         <v-card-title>
           <span class="text-h5">{{ isEdit ? 'Edit Lease' : 'Add Lease' }}</span>
         </v-card-title>
-        <v-form ref="form" method="post" action="/" lazy-validation @submit.prevent="saveLease">
+        <v-form ref="form" v-model="formValid" lazy-validation @submit.prevent="saveLease">
           <v-card-text>
             <v-container>
               <v-row>
+                <!-- Existing Fields -->
                 <v-col cols="12">
                   <v-select
                     v-model="form.unit_id"
@@ -84,6 +85,19 @@
                     outlined
                   ></v-select>
                 </v-col>
+                <!-- New File Upload Field -->
+                <v-col cols="12">
+                  <v-file-input
+                    v-model="form.documents"
+                    label="Documents"
+                    placeholder="Upload lease documents"
+                    :error="form.errors.has('documents')"
+                    :error-messages="form.errors.get('documents')"
+                    outlined
+                    accept=".pdf,.doc,.docx,.jpg,.png"
+                    multiple
+                  ></v-file-input>
+                </v-col>
               </v-row>
             </v-container>
           </v-card-text>
@@ -101,7 +115,6 @@
     </v-dialog>
   </v-row>
 </template>
-
 <script>
 import axios from 'axios'
 import Form from 'vform'
@@ -128,7 +141,9 @@ export default {
         end_date: '',
         security_deposit: '',
         status: '',
+        documents: null, // File upload field
       }),
+      formValid: false,
       startDateRules: [v => !!v || 'Start date is required'],
       endDateRules: [v => !!v || 'End date is required'],
       securityDepositRules: [
@@ -170,28 +185,42 @@ export default {
       this.form.reset()
     },
     saveLease() {
-      this.$refs.form.validate().then(success => {
-        if (success) {
-          const request = this.isEdit ? this.form.put(`leases/${this.lease.id}`) : this.form.post(`leases/`)
+      if (this.$refs.form.validate()) {
+        const formData = new FormData()
+        formData.append('unit_id', this.form.unit_id)
+        formData.append('tenant_id', this.form.tenant_id)
+        formData.append('start_date', this.form.start_date)
+        formData.append('end_date', this.form.end_date)
+        formData.append('security_deposit', this.form.security_deposit)
+        formData.append('status', this.form.status)
 
-          request
-            .then(() => {
-              this.$toast.success(`${this.isEdit ? 'Lease updated' : 'Lease added'} successfully`)
-              this.$emit('close')
-              this.$emit('lease-added')
-              this.form.reset()
-            })
-            .catch(error => {
-              this.$toast.error(error.response.data.message)
-            })
+        if (this.form.documents) {
+          for (const file of this.form.documents) {
+            formData.append('documents[]', file)
+          }
         }
-      })
+
+        const request = this.isEdit
+          ? axios.put(`leases/${this.lease.id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+          : axios.post('leases/', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+
+        request
+          .then(() => {
+            this.$toast.success(`${this.isEdit ? 'Lease updated' : 'Lease added'} successfully`)
+            this.$emit('close')
+            this.$emit('lease-added')
+            this.form.reset()
+          })
+          .catch(error => {
+            this.$toast.error(error.response.data.message)
+          })
+      }
     },
     fetchUnits() {
       axios
         .get('units')
         .then(response => {
-          this.units = response.data
+          this.units = response.data.data
         })
         .catch(error => {
           console.error('Error fetching units:', error)
@@ -201,7 +230,7 @@ export default {
       axios
         .get('tenants')
         .then(response => {
-          this.tenants = response.data
+          this.tenants = response.data.data
         })
         .catch(error => {
           console.error('Error fetching tenants:', error)
