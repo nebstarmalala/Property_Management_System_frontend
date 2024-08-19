@@ -59,6 +59,9 @@
         <template v-slot:item.tenant.user.name="{ item }">
           {{ item.tenant.user.name }}
         </template>
+        <template v-slot:item.status="{ item }">
+          {{ getStatusLabel(item.status) }}
+        </template>
         <template v-slot:item.action="{ item }">
           <v-btn class="ma-1" text icon @click="editLease(item)">
             <v-icon>{{ icons.mdiPencil }}</v-icon>
@@ -270,27 +273,29 @@ export default {
           this.isConfirmDeleteDialogButtonLoading = false
         })
     },
-    onLeaseAdded() {
-      this.refreshLeases()
-    },
-    onLeaseUpdated() {
-      this.refreshLeases()
-    },
-    onPageChange() {
-      this.getLeases()
-    },
-    onSearchFilterChange(filter) {
-      this.searchColumn = filter
-    },
-    viewLease(lease) {
-      this.$router.push({ name: 'lease-details', params: { id: lease.id } })
+    getStatusLabel(status) {
+      switch (status) {
+        case 1:
+          return 'Active'
+        case 2:
+          return 'Expired'
+        case 3:
+          return 'Terminated'
+        default:
+          return 'Unknown'
+      }
     },
     formatDate(date) {
-      const options = { year: 'numeric', month: 'short', day: 'numeric' }
-      return new Date(date).toLocaleDateString(undefined, options)
+      return this.$moment(date).format('YYYY-MM-DD')
     },
     applyFilter() {
       this.getLeases()
+    },
+    viewLease(item) {
+      // View lease details
+    },
+    onSearchFilterChange(newFilter) {
+      this.searchColumn = newFilter
     },
   },
 }
