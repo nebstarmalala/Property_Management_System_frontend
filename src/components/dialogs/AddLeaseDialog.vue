@@ -201,7 +201,7 @@ export default {
         }
 
         const request = this.isEdit
-          ? axios.put(`leases/${this.lease.id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
+          ? axios.post(`leases/${this.lease.id}`, formData, { headers: { 'Content-Type': 'multipart/form-data' } })
           : axios.post('leases/', formData, { headers: { 'Content-Type': 'multipart/form-data' } })
 
         request
