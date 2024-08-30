@@ -50,6 +50,14 @@ const routes = [
     },
   },
   {
+    path: '/leases/:id',
+    name: 'lease-details',
+    component: () => import('@/views/pages/LeaseDetails.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('@/views/pages/settings/Settings.vue'),
