@@ -6,9 +6,7 @@
       </v-col>
       <v-col cols="12" md="6" class="text-md-right">
         <v-btn color="primary" class="mb-5" @click="showAddLeaseDialog = true">
-          <v-icon left size="22">
-            {{ icons.mdiPlus }}
-          </v-icon>
+          <v-icon left size="22">{{ icons.mdiPlus }}</v-icon>
           Add Lease
         </v-btn>
       </v-col>
@@ -17,7 +15,7 @@
       <v-card-title>
         <v-row justify="center" class="mb-0">
           <v-col cols="12" md="4">
-            <refresh-button :loading="isLeasesRefreshing" @click="refreshLeases()" />
+            <refresh-button :loading="isLeasesRefreshing" @click="refreshLeases" />
           </v-col>
           <v-col cols="12" md="4" class="text-center">
             <search-input
@@ -37,12 +35,12 @@
               outlined
               dense
               @change="applyFilter"
-            ></v-select>
+            />
           </v-col>
         </v-row>
       </v-card-title>
       <v-data-table
-        v-model="selected"
+        v-model:selected="selected"
         :headers="headers"
         :items="leases"
         :loading="isLeasesLoading"
@@ -71,8 +69,8 @@
           </v-btn>
           <v-tooltip bottom>
             <template v-slot:activator="{ on, attrs }">
-              <v-btn ma-3 v-bind="attrs" text icon @click="viewLease(item)" v-on="on">
-                <v-icon v-bind="attrs" v-on="on">{{ icons.mdiEyeOutline }}</v-icon>
+              <v-btn v-bind="attrs" text icon @click="viewLease(item)" v-on="on">
+                <v-icon>{{ icons.mdiEyeOutline }}</v-icon>
               </v-btn>
             </template>
             <span>View Lease</span>
@@ -83,20 +81,14 @@
     <add-lease-dialog
       :show-dialog="showAddLeaseDialog"
       :lease="selectedLease"
-      @close="
-        showAddLeaseDialog = false
-        selectedLease = {}
-      "
+      @close="() => { showAddLeaseDialog = false; selectedLease = {}; }"
       @lease-added="getLeases"
     />
     <confirm-dialog
       :show-dialog="showConfirmDeleteDialog"
       :is-agree-button-loading="isConfirmDeleteDialogButtonLoading"
-      :agree-text="'Delete'"
-      @cancel="
-        showConfirmDeleteDialog = false
-        toDelete = null
-      "
+      agree-text="Delete"
+      @cancel="() => { showConfirmDeleteDialog = false; toDelete = null; }"
       @agree="deleteLease"
     />
   </div>
@@ -105,7 +97,7 @@
 <script>
 import axios from 'axios'
 import _ from 'lodash'
-import { mdiEyeOutline, mdiArrowLeft, mdiPencil, mdiDelete, mdiPlus } from '@mdi/js'
+import { mdiEyeOutline, mdiPencil, mdiDelete, mdiPlus } from '@mdi/js'
 import BreadCrumb from '@/components/partials/BreadCrumb.vue'
 import SearchInput from '@/components/partials/SearchInput.vue'
 import AddLeaseDialog from '@/components/dialogs/AddLeaseDialog.vue'
@@ -114,7 +106,7 @@ import RefreshButton from '@/components/partials/RefreshButton.vue'
 
 export default {
   components: {
-    breadcrumb: BreadCrumb,
+    BreadCrumb,
     SearchInput,
     AddLeaseDialog,
     ConfirmDialog,
@@ -163,7 +155,6 @@ export default {
       ],
       icons: {
         mdiEyeOutline,
-        mdiArrowLeft,
         mdiPencil,
         mdiDelete,
         mdiPlus,
@@ -220,7 +211,7 @@ export default {
           this.pagination.totalItems = response.data.total
         })
         .catch(error => {
-          this.$toast.error(error.response.data.message)
+          this.$toast.error(error.response?.data?.message || 'Failed to fetch leases')
         })
         .finally(() => {
           this.isLeasesLoading = false
@@ -231,7 +222,6 @@ export default {
       axios
         .get('properties')
         .then(response => {
-          console.log('Properties fetched successfully:', response.data)
           this.propertyOptions = [
             { id: null, name: 'All Properties' },
             ...response.data.data.map(property => ({
@@ -241,7 +231,6 @@ export default {
           ]
         })
         .catch(error => {
-          console.error('Error fetching properties:', error)
           this.$toast.error('Failed to load properties')
         })
     },
@@ -266,7 +255,7 @@ export default {
           this.$toast.success('Lease deleted successfully')
         })
         .catch(error => {
-          this.$toast.error(error.response.data.message)
+          this.$toast.error(error.response?.data?.message || 'Failed to delete lease')
         })
         .finally(() => {
           this.showConfirmDeleteDialog = false
@@ -291,8 +280,8 @@ export default {
     applyFilter() {
       this.getLeases()
     },
-    viewLease(item) {
-      // View lease details
+    viewLease(lease) {
+      this.$router.push({ name: 'lease-details', params: { id: lease.id } })
     },
     onSearchFilterChange(newFilter) {
       this.searchColumn = newFilter
