@@ -133,7 +133,9 @@
         searchColumn: 'tenant_number',
         searchFilters: [
           { text: 'Tenant Number', value: 'tenant_number' },
-          { text: 'Name', value: 'user.name' },
+          { text: 'Tenant Name', value: 'user.name' },
+          { text: 'Phone Number', value: 'user.phone_number' },
+          { text: 'Email', value: 'user.email' },
         ],
         tenants: [],
         selected: [],
