@@ -131,7 +131,6 @@ export default {
       },
       options: {},
       headers: [
-        { text: 'Lease Number', value: 'lease_number' },
         { text: 'Unit', value: 'unit.unit_number' },
         { text: 'Tenant', value: 'tenant.user.name' },
         { text: 'Start Date', value: 'start_date' },
@@ -140,10 +139,11 @@ export default {
         { text: 'Status', value: 'status' },
         { text: 'Action', value: 'action', sortable: false },
       ],
-      searchColumn: 'lease_number',
+      searchColumn: 'tenant.user.name', // Adjusted to reflect the preferred search
       searchFilters: [
-        { text: 'Lease Number', value: 'lease_number' },
         { text: 'Tenant Name', value: 'tenant.user.name' },
+        { text: 'Unit Number', value: 'unit.unit_number' },
+        { text: 'Status', value: 'status' },
       ],
       leases: [],
       selected: [],
