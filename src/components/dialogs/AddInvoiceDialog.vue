@@ -9,19 +9,8 @@
           <v-card-text>
             <v-container>
               <v-row>
-                <!-- Invoice Number -->
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="form.invoice_number"
-                    label="Invoice Number"
-                    :rules="[v => !!v || 'Invoice number is required']"
-                    :error="form.errors.has('invoice_number')"
-                    :error-messages="form.errors.get('invoice_number')"
-                    outlined
-                  ></v-text-field>
-                </v-col>
                 <!-- Reference -->
-                <v-col cols="12" md="6">
+                <v-col cols="12" md="12">
                   <v-text-field
                     v-model="form.ref"
                     label="Reference"
@@ -173,7 +162,6 @@ export default {
   data() {
     return {
       form: new Form({
-        invoice_number: '',
         lease_id: '',
         amount: '',
         tax: '',
@@ -231,12 +219,16 @@ export default {
           .then(() => {
             this.$toast.success(`${this.isEdit ? 'Invoice updated' : 'Invoice added'} successfully`)
             this.$emit('close')
-            this.$emit('invoice-saved')
+            this.$emit('invoice-added')
             this.form.reset()
           })
           .catch(error => {
-            this.$toast.error(error.response.data.message)
+            const errorMessage = error.response?.data?.message || 'An error occurred';
+            this.$toast.error(errorMessage);
           })
+          .finally(() => {
+            this.form.busy = false;
+          });
       }
     },
   },
