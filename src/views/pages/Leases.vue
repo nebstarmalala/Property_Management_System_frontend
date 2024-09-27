@@ -139,7 +139,7 @@ export default {
         { text: 'Status', value: 'status' },
         { text: 'Action', value: 'action', sortable: false },
       ],
-      searchColumn: 'tenant.user.name', // Adjusted to reflect the preferred search
+      searchColumn: 'tenant.user.name',
       searchFilters: [
         { text: 'Tenant Name', value: 'tenant.user.name' },
         { text: 'Unit Number', value: 'unit.unit_number' },
