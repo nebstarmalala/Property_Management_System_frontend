@@ -27,15 +27,21 @@
       <v-card-title>Lease Details</v-card-title>
       <v-card-text v-if="leaseDetails">
         <v-row>
-          <v-col md="6" sm="12">
+          <v-col md="4" sm="12">
             <p><strong>Lease Number:</strong> {{ leaseDetails.lease_number }}</p>
             <p><strong>Property:</strong> {{ leaseDetails.unit.property.name }}</p>
             <p><strong>Unit:</strong> {{ leaseDetails.unit.unit_number }}</p>
-            <p><strong>Status:</strong> {{ formatStatus(leaseDetails.status) }}</p>
+            <p><strong>Status:</strong> {{ formatLeaseStatus(leaseDetails.status) }}</p>
           </v-col>
-          <v-col md="6" sm="12">
-            <p><strong>Tenant:</strong> {{ leaseDetails.tenant.user.name }}</p>
+          <v-col md="4" sm="12">
+            <p><strong>Tenant Number:</strong> {{ leaseDetails.tenant.tenant_number }}</p>
+            <p><strong>Tenant Name:</strong> {{ leaseDetails.tenant.user.name }}</p>
             <p><strong>Tenant Phone Number:</strong> {{ leaseDetails.tenant.user.phone_number }}</p>
+            <p><strong>Tenant Email:</strong> {{ leaseDetails.tenant.user.email }}</p>
+          </v-col>
+          <v-col md="4" sm="12">
+            <p><strong>Rent:</strong> {{ leaseDetails.unit.rent }}</p>
+            <p><strong>Security Deposit:</strong> {{ leaseDetails.security_deposit }}</p>
             <p><strong>Start Date:</strong> {{ formatDate(leaseDetails.start_date) }}</p>
             <p><strong>End Date:</strong> {{ formatDate(leaseDetails.end_date) }}</p>
           </v-col>
@@ -146,8 +152,14 @@
         :footer-props="footerProps"
         item-key="id"
       >
-        <template v-slot:item.repair_date="{ item }">
-          {{ formatDate(item.repair_date) }}
+        <template v-slot:item.status="{ item }">
+          {{ formatRepairStatus(item.status) }}
+        </template>
+        <template v-slot:item.priority="{ item }">
+          {{ formatRepairPriority(item.priority) }}
+        </template>
+        <template v-slot:item.created_at="{ item }">
+          {{ formatDate(item.created_at) }}
         </template>
         <template v-slot:item.action="{ item }">
           <v-tooltip bottom>
@@ -178,34 +190,69 @@
       </v-data-table>
     </v-card>
     <add-invoice-dialog
-    :show-dialog.sync="showAddInvoiceDialog"
-    :invoice="selectedInvoice"
-    :lease-id="$route.params.id"
-    @close="() => { showAddInvoiceDialog = false; selectedInvoice = {}; }"
-    @invoice-added="fetchInvoices"
-  />
-  
-  <add-repair-dialog
-    :show-dialog.sync="showAddRepairDialog"
-    :repair="selectedRepair"
-    :lease-id="$route.params.id"
-    @close="() => { showAddRepairDialog = false; selectedRepair = {}; }"
-    @repair-added="fetchRepairs"
-  />
+      :show-dialog.sync="showAddInvoiceDialog"
+      :invoice="selectedInvoice"
+      :lease-id="$route.params.id"
+      @close="
+        () => {
+          showAddInvoiceDialog = false
+          selectedInvoice = {}
+        }
+      "
+      @invoice-added="fetchInvoices"
+    />
+
+    <add-repair-dialog
+      :show-dialog.sync="showAddRepairDialog"
+      :repair="selectedRepair"
+      :lease-id="$route.params.id"
+      @close="
+        () => {
+          showAddRepairDialog = false
+          selectedRepair = {}
+        }
+      "
+      @repair-added="fetchRepairs"
+    />
+
+    <v-dialog v-model="deleteInvoiceDialog" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Delete Invoice</v-card-title>
+        <v-card-text>Are you sure you want to delete this invoice?</v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="red" @click="deleteInvoice()">Delete</v-btn>
+          <v-btn @click="deleteInvoiceDialog = false">Cancel</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="deleteRepairDialog" max-width="400">
+      <v-card>
+        <v-card-title class="headline">Delete Repair</v-card-title>
+        <v-card-text>Are you sure you want to delete this repair?</v-card-text>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="red" @click="deleteRepair()">Delete</v-btn>
+          <v-btn @click="deleteRepairDialog = false">Cancel</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </div>
 </template>
 
-
 <script>
-import axios from 'axios';
-import { mdiEyeOutline, mdiArrowLeft, mdiPencil, mdiDelete, mdiPlus } from '@mdi/js';
-import BreadCrumb from '@/components/partials/BreadCrumb.vue';
-import AddInvoiceDialog from '@/components/dialogs/AddInvoiceDialog.vue';
+import axios from 'axios'
+import { mdiEyeOutline, mdiArrowLeft, mdiPencil, mdiDelete, mdiPlus } from '@mdi/js'
+import BreadCrumb from '@/components/partials/BreadCrumb.vue'
+import AddInvoiceDialog from '@/components/dialogs/AddInvoiceDialog.vue'
+import AddRepairDialog from '@/components/dialogs/AddRepairDialog.vue'
 
 export default {
   components: {
     breadcrumb: BreadCrumb,
-    AddInvoiceDialog
+    AddInvoiceDialog,
+    AddRepairDialog,
   },
   data() {
     return {
@@ -213,6 +260,8 @@ export default {
       showAddRepairDialog: false,
       selectedInvoice: {},
       selectedRepair: {},
+      deleteInvoiceDialog: false,
+      deleteRepairDialog: false,
       leaseDetails: null,
       invoiceSearch: '',
       repairSearch: '',
@@ -238,7 +287,7 @@ export default {
         { text: 'Description', value: 'description' },
         { text: 'Status', value: 'status' },
         { text: 'Priority', value: 'priority' },
-        { text: 'Date', value: 'repair_date' },
+        { text: 'Date', value: 'created_at' },
         { text: 'Action', value: 'action', sortable: false },
       ],
       footerProps: {
@@ -256,93 +305,155 @@ export default {
         { text: 'Leases', disabled: false, to: { name: 'leases' } },
         { text: 'Lease Details', disabled: true },
       ],
-    };
+    }
   },
   methods: {
     formatDate(date) {
-      if (!date) return '';
-      return new Date(date).toLocaleDateString();
+      if (!date) return ''
+      return new Date(date).toLocaleDateString()
     },
-    formatStatus(status) {
+    formatLeaseStatus(status) {
       switch (status) {
         case 1:
-          return 'ACTIVE';
+          return 'ACTIVE'
         case 2:
-          return 'EXPIRED';
+          return 'EXPIRED'
         case 3:
-          return 'TERMINATED';
+          return 'TERMINATED'
         default:
-          return 'UNKNOWN';
+          return 'UNKNOWN'
       }
     },
-    async fetchInvoices(page = 1, itemsPerPage = 10, sortBy = 'billing_date', sortOrder = 'desc', search = '', searchColumn = '') {
-      this.isInvoicesLoading = true;
-      this.errorMessage = '';
+    formatRepairStatus(status) {
+      switch (status) {
+        case 1:
+          return 'PENDING'
+        case 2:
+          return 'IN PROGRESS'
+        case 3:
+          return 'COMPLETED'
+        default:
+          return 'UNKNOWN'
+      }
+    },
+    formatRepairPriority(status) {
+      switch (status) {
+        case 1:
+          return 'LOW'
+        case 2:
+          return 'MID'
+        case 3:
+          return 'HIGH'
+        default:
+          return 'UNKNOWN'
+      }
+    },
+    async fetchInvoices(
+      page = 1,
+      itemsPerPage = 10,
+      sortBy = 'billing_date',
+      sortOrder = 'desc',
+      search = '',
+      searchColumn = '',
+    ) {
+      this.isInvoicesLoading = true
+      this.errorMessage = ''
       try {
         const response = await axios.get(
           `/invoices?paginate=true&sortBy=${sortBy}&sortDirection=${sortOrder}&search=${search}&searchColumn=${searchColumn}&page=${page}&perPage=${itemsPerPage}&lease_id=${this.$route.params.id}`,
-        );
-        this.invoices = response.data.data;
-        console.log('Invoices loaded:', this.invoices);
+        )
+        this.invoices = response.data.data
+        console.log('Invoices loaded:', this.invoices)
       } catch (error) {
-        this.errorMessage = 'Failed to load invoices. Please try again later.';
-        console.error('Failed to fetch invoices:', error);
+        this.errorMessage = 'Failed to load invoices. Please try again later.'
+        console.error('Failed to fetch invoices:', error)
       } finally {
-        this.isInvoicesLoading = false;
+        this.isInvoicesLoading = false
       }
     },
-    async fetchRepairs(page = 1, itemsPerPage = 10, sortBy = 'repair_date', sortOrder = 'desc', search = '', searchColumn = '') {
-      this.isRepairsLoading = true;
-      this.errorMessage = ''; 
+    async fetchRepairs(
+      page = 1,
+      itemsPerPage = 10,
+      sortBy = 'repair_date',
+      sortOrder = 'desc',
+      search = '',
+      searchColumn = '',
+    ) {
+      this.isRepairsLoading = true
+      this.errorMessage = ''
       try {
         const response = await axios.get(
           `/repairs?paginate=true&sortBy=${sortBy}&sortDirection=${sortOrder}&search=${search}&searchColumn=${searchColumn}&page=${page}&perPage=${itemsPerPage}&lease_id=${this.$route.params.id}`,
-        );
-        this.repairs = response.data.data;
-        console.log('Repairs loaded:', this.repairs);
+        )
+        this.repairs = response.data.data
+        console.log('Repairs loaded:', this.repairs)
       } catch (error) {
-        this.errorMessage = 'Failed to load repairs. Please try again later.';
-        console.error('Failed to fetch repairs:', error);
+        this.errorMessage = 'Failed to load repairs. Please try again later.'
+        console.error('Failed to fetch repairs:', error)
       } finally {
-        this.isRepairsLoading = false;
+        this.isRepairsLoading = false
       }
     },
     async getLeaseDetails() {
       try {
-        const response = await axios.get(`/leases/${this.$route.params.id}`);
-        this.leaseDetails = response.data;
+        const response = await axios.get(`/leases/${this.$route.params.id}`)
+        this.leaseDetails = response.data
       } catch (error) {
-        console.error('Error fetching lease details:', error);
-        this.errorMessage = 'Failed to load lease details. Please try again later.';
+        console.error('Error fetching lease details:', error)
+        this.errorMessage = 'Failed to load lease details. Please try again later.'
       }
     },
     addInvoice() {
-      this.selectedInvoice = { lease_id: this.$route.params.id };
-      this.showAddInvoiceDialog = true;
+      this.selectedInvoice = { lease_id: this.$route.params.id }
+      this.showAddInvoiceDialog = true
     },
     editInvoice(invoice) {
-      this.selectedInvoice = { ...invoice, lease_id: this.$route.params.id };
-      this.showAddInvoiceDialog = true;
+      this.selectedInvoice = { ...invoice, lease_id: this.$route.params.id }
+      this.showAddInvoiceDialog = true
     },
     addRepair() {
-      this.selectedRepair = { lease_id: this.$route.params.id };
-      this.showAddRepairDialog = true;
+      this.selectedRepair = { lease_id: this.$route.params.id }
+      this.showAddRepairDialog = true
     },
     editRepair(repair) {
-      this.selectedRepair = { ...repair, lease_id: this.$route.params.id };
-      this.showAddRepairDialog = true;
+      this.selectedRepair = { ...repair, lease_id: this.$route.params.id }
+      this.showAddRepairDialog = true
     },
-    showDeleteRepairDialog(id) {
-      // Implement delete repair dialog logic
-      console.log('Delete repair:', id);
+    showDeleteInvoiceDialog(invoiceId) {
+      this.invoiceToDelete = invoiceId
+      this.deleteInvoiceDialog = true
+    },
+    async deleteInvoice() {
+      try {
+        await axios.delete(`/invoices/${this.invoiceToDelete}`)
+        this.fetchInvoices()
+      } catch (error) {
+        this.errorMessage = 'Failed to delete invoice. Please try again.'
+      } finally {
+        this.deleteInvoiceDialog = false
+      }
+    },
+    showDeleteRepairDialog(repairId) {
+      this.repairToDelete = repairId
+      this.deleteRepairDialog = true
+    },
+    async deleteRepair() {
+      try {
+        await axios.delete(`/repairs/${this.repairToDelete}`)
+        this.fetchRepairs()
+      } catch (error) {
+        this.errorMessage = 'Failed to delete repair. Please try again.'
+      } finally {
+        this.deleteRepairDialog = false
+      }
     },
   },
   async mounted() {
-    await this.getLeaseDetails();
-    this.fetchInvoices();
-    this.fetchRepairs();
+    await this.getLeaseDetails()
+    this.fetchInvoices()
+    this.fetchRepairs()
   },
-};
+}
 </script>
 
 <style scoped>
