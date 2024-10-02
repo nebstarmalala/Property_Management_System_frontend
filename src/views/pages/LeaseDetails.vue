@@ -91,6 +91,9 @@
         <template v-slot:item.due_date="{ item }">
           {{ formatDate(item.due_date) }}
         </template>
+        <template v-slot:item.status="{ item }">
+          {{ formatInvoiceStatus(item.status) }}
+        </template>
         <template v-slot:item.action="{ item }">
           <v-tooltip bottom>
             <template v-slot:activator="{ on, attrs }">
@@ -275,11 +278,12 @@ export default {
       invoiceHeaders: [
         { text: 'Invoice Number', value: 'invoice_number' },
         { text: 'Amount', value: 'amount' },
-        { text: 'Tax', value: 'tax' },
-        { text: 'Discount', value: 'discount' },
+        // { text: 'Tax', value: 'tax' },
+        // { text: 'Discount', value: 'discount' },
         { text: 'Total Amount', value: 'grand_total' },
         { text: 'Billing Date', value: 'billing_date' },
         { text: 'Due Date', value: 'due_date' },
+        { text: 'Status', value: 'status' },
         { text: 'Action', value: 'action', sortable: false },
       ],
       repairHeaders: [
@@ -320,6 +324,20 @@ export default {
           return 'EXPIRED'
         case 3:
           return 'TERMINATED'
+        default:
+          return 'UNKNOWN'
+      }
+    },
+    formatInvoiceStatus(status) {
+      switch (status) {
+        case 1:
+          return 'UNPAID'
+        case 2:
+          return 'PAID'
+        case 3:
+          return 'OVERDUE'
+        case 4:
+          return 'PARTIALLY PAID'
         default:
           return 'UNKNOWN'
       }
