@@ -10,10 +10,7 @@
   >
     <!-- Navigation Header -->
     <div class="vertical-nav-header d-flex items-center ps-6 pe-5 pt-5 pb-2">
-      <router-link
-        to="/"
-        class="d-flex align-center text-decoration-none"
-      >
+      <router-link to="/" class="d-flex align-center text-decoration-none">
         <v-img
           :src="require('@/assets/images/logos/logo.svg')"
           max-height="30px"
@@ -32,34 +29,14 @@
     </div>
 
     <!-- Navigation Items -->
-    <v-list
-      expand
-      shaped
-      class="vertical-nav-menu-items pr-5"
-    >
-      <nav-menu-link
-        title="Dashboard"
-        :to="{ name: 'dashboard' }"
-        :icon="icons.mdiHomeOutline"
-      ></nav-menu-link>
+    <v-list expand shaped class="vertical-nav-menu-items pr-5">
+      <nav-menu-link title="Dashboard" :to="{ name: 'dashboard' }" :icon="icons.mdiViewDashboard"></nav-menu-link>
 
-      <nav-menu-link
-        title="Properties"
-        :to="{ name: 'properties' }"
-        :icon="icons.mdiHomeOutline"
-      ></nav-menu-link>
+      <nav-menu-link title="Properties" :to="{ name: 'properties' }" :icon="icons.mdiHomeCity"></nav-menu-link>
 
-      <nav-menu-link
-        title="Tenants"
-        :to="{ name: 'tenants' }"
-        :icon="icons.mdiHomeOutline"
-      ></nav-menu-link>
+      <nav-menu-link title="Tenants" :to="{ name: 'tenants' }" :icon="icons.mdiAccountGroup"></nav-menu-link>
 
-      <nav-menu-link
-        title="Leases"
-        :to="{ name: 'leases' }"
-        :icon="icons.mdiHomeOutline"
-      ></nav-menu-link>
+      <nav-menu-link title="Leases" :to="{ name: 'leases' }" :icon="icons.mdiMaterialDesign"></nav-menu-link>
     </v-list>
     <nav-menu-link
       title="Settings"
@@ -72,10 +49,7 @@
 
 <script>
 // eslint-disable-next-line object-curly-newline
-import {
-  mdiHomeOutline,
-  mdiCog,
-} from '@mdi/js'
+import { mdiViewDashboard, mdiHomeCity, mdiCog, mdiAccountGroup, mdiMaterialDesign } from '@mdi/js'
 import NavMenuLink from './components/NavMenuLink.vue'
 
 export default {
@@ -91,8 +65,11 @@ export default {
   setup() {
     return {
       icons: {
-        mdiHomeOutline,
+        mdiViewDashboard,
+        mdiHomeCity,
         mdiCog,
+        mdiAccountGroup,
+        mdiMaterialDesign,
       },
     }
   },
