@@ -173,9 +173,10 @@ export default {
       }),
       formValid: false,
       statusOptions: [
-        { text: 'Paid', value: 1 },
-        { text: 'Pending', value: 2 },
+        { text: 'Unpaid', value: 1 },
+        { text: 'Paid', value: 2 },
         { text: 'Overdue', value: 3 },
+        { text: 'Partially paid', value: 4 },
       ],
       billingDateMenu: false,
       dueDateMenu: false,
