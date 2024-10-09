@@ -58,6 +58,14 @@ const routes = [
     },
   },
   {
+    path: '/leases/invoices/:id',
+    name: 'invoice-details',
+    component: () => import('@/views/pages/InvoiceDetails.vue'),
+    meta: {
+      requiresAuth: true,
+    },
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('@/views/pages/settings/Settings.vue'),
