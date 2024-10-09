@@ -465,6 +465,9 @@ export default {
         this.deleteRepairDialog = false
       }
     },
+    viewInvoice(invoice) {
+      this.$router.push({ name: 'invoice-details', params: { id: invoice.id } })
+    },
   },
   async mounted() {
     await this.getLeaseDetails()
