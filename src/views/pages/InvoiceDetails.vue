@@ -173,7 +173,7 @@ export default {
       },
       breadcrumbs: [
         { text: 'Dashboard', disabled: false, to: { name: 'dashboard' } },
-        { text: 'Invoices', disabled: false, to: { name: 'invoices' } },
+        { text: 'Invoices', disabled: false},
         { text: 'Invoice Details', disabled: true },
       ],
     }
