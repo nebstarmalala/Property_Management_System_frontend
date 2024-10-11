@@ -17,12 +17,10 @@
       </v-col>
     </v-row>
 
-    <!-- Error Alert -->
     <v-alert v-if="errorMessage" type="error" dismissible>
       {{ errorMessage }}
     </v-alert>
 
-    <!-- Invoice Details Card -->
     <v-card class="mb-4">
       <v-card-title>INVOICE DETAILS</v-card-title>
       <v-card-text v-if="invoiceDetails">
@@ -33,12 +31,12 @@
             <p><strong>Status:</strong> {{ formatInvoiceStatus(invoiceDetails.status) }}</p>
           </v-col>
           <v-col md="4" sm="12">
-            <p><strong>Amount:</strong> {{ invoiceDetails.amount }}</p>
-            <p><strong>Tax:</strong> {{ invoiceDetails.tax }}</p>
-            <p><strong>Discount:</strong> {{ invoiceDetails.discount }}</p>
+            <p><strong>Amount:</strong> {{ formatCurrency(invoiceDetails.amount) }}</p>
+            <p><strong>Tax:</strong> {{ formatCurrency(invoiceDetails.tax) }}</p>
+            <p><strong>Discount:</strong> {{ formatCurrency(invoiceDetails.discount) }}</p>
           </v-col>
           <v-col md="4" sm="12">
-            <p><strong>Grand Total:</strong> {{ invoiceDetails.grand_total }}</p>
+            <p><strong>Grand Total:</strong> {{ formatCurrency(invoiceDetails.grand_total) }}</p>
             <p><strong>Billing Date:</strong> {{ formatDate(invoiceDetails.billing_date) }}</p>
             <p><strong>Due Date:</strong> {{ formatDate(invoiceDetails.due_date) }}</p>
           </v-col>
@@ -50,7 +48,6 @@
       </v-card-text>
     </v-card>
 
-    <!-- Payments Section -->
     <v-card class="mb-4">
       <v-card-title>
         Payments
@@ -81,6 +78,7 @@
         :options.sync="paymentOptions"
         :footer-props="footerProps"
         item-key="id"
+        @update:options="handleTableUpdate"
       >
         <template v-slot:item.payment_date="{ item }">
           {{ formatDate(item.payment_date) }}
@@ -113,7 +111,12 @@
       :show-dialog.sync="showAddPaymentDialog"
       :payment="selectedPayment"
       :invoice-id="$route.params.id"
-      @close="resetPaymentDialog"
+      @close="
+        () => {
+          showAddPaymentDialog = false
+          selectedRepair = {}
+        }
+      "
       @payment-added="fetchPayments"
     />
 
@@ -123,7 +126,7 @@
         <v-card-text>Are you sure you want to delete this payment?</v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="red" @click="deletePayment()">Delete</v-btn>
+          <v-btn color="red" @click="deletePayment">Delete</v-btn>
           <v-btn @click="deletePaymentDialog = false">Cancel</v-btn>
         </v-card-actions>
       </v-card>
@@ -146,13 +149,14 @@ export default {
     return {
       showAddPaymentDialog: false,
       selectedPayment: {},
+      selectedPaymentId: null,
       deletePaymentDialog: false,
       invoiceDetails: null,
       payments: [],
       paymentSearch: '',
       paymentOptions: {},
-      isPaymentsLoading: true, // loading state for payments
-      isLoading: true, // loading state for invoice details
+      isPaymentsLoading: true,
+      isLoading: true,
       errorMessage: '',
       paymentHeaders: [
         { text: 'Payment Number', value: 'payment_number' },
@@ -173,7 +177,7 @@ export default {
       },
       breadcrumbs: [
         { text: 'Dashboard', disabled: false, to: { name: 'dashboard' } },
-        { text: 'Invoices', disabled: false},
+        { text: 'Invoices', disabled: false },
         { text: 'Invoice Details', disabled: true },
       ],
     }
@@ -182,38 +186,30 @@ export default {
     formatDate(date) {
       return new Date(date).toLocaleDateString()
     },
+    formatCurrency(amount) {
+      return new Intl.NumberFormat('en-KE', { style: 'currency', currency: 'KES' }).format(amount)
+    },
     formatInvoiceStatus(status) {
       switch (status) {
-        case 1:
-          return 'UNPAID'
-        case 2:
-          return 'PAID'
-        case 3:
-          return 'OVERDUE'
-        case 4:
-          return 'PARTIALLY PAID'
-        default:
-          return 'UNKNOWN'
+        case 1: return 'UNPAID'
+        case 2: return 'PAID'
+        case 3: return 'OVERDUE'
+        case 4: return 'PARTIALLY PAID'
+        default: return 'UNKNOWN'
       }
     },
     formatPaymentMethod(method) {
       switch (method) {
-        case 1:
-          return 'MPESA'
-        case 2:
-          return 'CREDIT CARD'
-        case 3:
-          return 'BANK TRANSFER'
-        case 4:
-          return 'CASH'
-        case 5:
-          return 'PAYPAL'
-        default:
-          return 'UNKNOWN'
+        case 1: return 'MPESA'
+        case 2: return 'CREDIT CARD'
+        case 3: return 'BANK TRANSFER'
+        case 4: return 'CASH'
+        case 5: return 'PAYPAL'
+        default: return 'UNKNOWN'
       }
     },
     async getInvoiceDetails() {
-      this.isLoading = true // set loading state
+      this.isLoading = true
       try {
         const response = await axios.get(`/invoices/${this.$route.params.id}`)
         this.invoiceDetails = response.data
@@ -221,7 +217,7 @@ export default {
         this.errorMessage = 'Failed to load invoice details. Please try again later.'
         console.error('Error fetching invoice details:', error)
       } finally {
-        this.isLoading = false // stop loading
+        this.isLoading = false
       }
     },
     async fetchPayments(
@@ -230,45 +226,54 @@ export default {
       sortBy = 'payment_date',
       sortOrder = 'desc',
       search = '',
-      searchColumn = ''
+      searchColumn = '',
     ) {
-      this.isPaymentsLoading = true // set loading state
+      this.isPaymentsLoading = true
       try {
         const response = await axios.get(
-          `/payments?paginate=true&sortBy=${sortBy}&sortDirection=${sortOrder}&search=${search}&searchColumn=${searchColumn}&page=${page}&perPage=${itemsPerPage}&invoice_id=${this.$route.params.id}`
+          `/payments?paginate=true&sortBy=${sortBy}&sortDirection=${sortOrder}&search=${search}&searchColumn=${searchColumn}&page=${page}&perPage=${itemsPerPage}&invoice_id=${this.$route.params.id}`,
         )
         this.payments = response.data.data
       } catch (error) {
         this.errorMessage = 'Failed to load payments. Please try again later.'
         console.error('Failed to fetch payments:', error)
       } finally {
-        this.isPaymentsLoading = false // stop loading
+        this.isPaymentsLoading = false
       }
     },
-    resetPaymentDialog() {
-      this.showAddPaymentDialog = false
-      this.selectedPayment = {}
+    addPayment() {
+      this.selectedPayment = { invoice_id: this.$route.params.id }
+      this.showAddPaymentDialog = true
     },
     editPayment(payment) {
       this.selectedPayment = payment
       this.showAddPaymentDialog = true
     },
+    resetPaymentDialog() {
+      this.selectedPayment = {}
+      this.showAddPaymentDialog = false
+    },
     showDeletePaymentDialog(paymentId) {
-      this.selectedPayment.id = paymentId
+      this.selectedPaymentId = paymentId
       this.deletePaymentDialog = true
     },
     async deletePayment() {
       try {
-        await axios.delete(`/payments/${this.selectedPayment.id}`)
+        await axios.delete(`/payments/${this.selectedPaymentId}`)
         this.fetchPayments()
       } catch (error) {
+        this.errorMessage = 'Failed to delete payment. Please try again later.'
         console.error('Error deleting payment:', error)
       } finally {
         this.deletePaymentDialog = false
       }
     },
+    handleTableUpdate(options) {
+      this.paymentOptions = options
+      this.fetchPayments(options.page, options.itemsPerPage, options.sortBy, options.sortOrder, this.paymentSearch)
+    },
   },
-  async created() {
+  mounted() {
     this.getInvoiceDetails()
     this.fetchPayments()
   },
@@ -277,7 +282,6 @@ export default {
 
 <style scoped>
 .go-back-button {
-  float: right;
-  margin-top: 10px;
+  margin-top: 16px;
 }
 </style>
